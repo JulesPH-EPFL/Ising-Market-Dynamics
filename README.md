@@ -8,7 +8,7 @@ This project explores the application of the **Ising Model**, a cornerstone of s
 ## Theoretical Framework
 
 ### 1. The Microscopic Model: The Hamiltonian
-The market is represented by a 2D lattice of size $L \times L$, where each site $i$ is occupied by an agent characterized by a spin state $s_i \in \{+1, -1\}$:
+The market is represented by a 2D lattice of size $L \times L$, where each site $i$ is occupied by an agent characterized by a spin state $s_i \in {+1, -1}$:
 * $s_i = +1$: Bullish agent (Buyer)
 * $s_i = -1$: Bearish agent (Seller)
 
