@@ -35,13 +35,13 @@ Here, $\beta = 1/k_B T$ is the inverse temperature. In econophysics, the **tempe
 ### 3. From Magnetization to Price
 To bridge physics and finance, we define the **total magnetization** $M_t$ at time $t$ as the aggregate excess demand:
 
-$$M_t = \sum_{i=1}^{N} s_i(t)$$
+$$m_t = \frac{1}{N} \sum_{i=1}^{N} s_i(t)$$
 
 Using the **Market Impact** hypothesis, we derive the **log-return** $r_t$ and the **price** $P_t$:
 
-$$r_t = \ln(P_t) - \ln(P_{t-1}) \approx \frac{M_t}{\lambda}$$
+$$r_t = \ln(P_t) - \ln(P_{t-1}) \approx \frac{m_t}{\lambda}$$
 
-$$P_t = P_0 \exp \left( \sum_{k=1}^t \frac{M_k}{\lambda} \right)$$
+$$P_t = P_0 \exp \left( \sum_{k=1}^t \frac{m_k}{\lambda} \right)$$
 
 Where $\lambda$ represents the **market liquidity** (depth of the order book).
 
