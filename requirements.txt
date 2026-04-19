@@ -2,3 +2,5 @@ numpy
 numba
 pandas
 pyarrow
+jupyter
+matplotlib
