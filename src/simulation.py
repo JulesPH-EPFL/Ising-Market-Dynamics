@@ -33,11 +33,13 @@ class MarketSimulator:
         }
         df = pd.DataFrame(storage)
         
-        name = f"N{self.N}_T{self.T}_J{self.J}_h{self.h}_t{self.Delta_t}_P0{self.P_0}_l{self.lambd}.parquet"
-        full_path = os.path.join("data",name)
+        name = f"data/N{self.N}_T{self.T:.2f}_J{self.J}_h{self.h}_t{self.Delta_t}_P0{self.P_0}_l{self.lambd}.parquet"
         
-        df.to_parquet(full_path)
+        df.to_parquet(name)
+        return name
         
     def run(self):
         m_history, r_history, P_history = self.get_price_history()
-        self.export(m_history, r_history, P_history)
+        name = self.export(m_history, r_history, P_history)
+        return name
+        

@@ -19,7 +19,7 @@ class MarketMetrics:
         else:
             raise TypeError("Fournissez un DataFrame ou un chemin de fichier valide.")
             
-        required_cols = ['r_history', 'M_history']
+        required_cols = ['r_history', 'm_history']
         for col in required_cols:
             if col not in self.df.columns:
                 print(f"Attention : La colonne {col} est manquante dans les données.")
@@ -42,7 +42,7 @@ class MarketMetrics:
             print("Attention: La simulation est trop courte par rapport au burn-in.")
             burn_in = 0
             
-        m_eq = self.df['M_history'].iloc[burn_in:] 
+        m_eq = self.df['m_history'].iloc[burn_in:] 
         
         mean_m_sq = np.mean(m_eq**2)
         sq_mean_m = (np.mean(m_eq))**2
@@ -130,21 +130,29 @@ def plot_susceptibility_curve(results_dict):
     pour localiser empiriquement la transition de phase.
     
     :param results_dict: Dictionnaire {Température: Valeur de Chi}
-    :param N: Nombre de spins
     """
-    T_vals = list(results_dict.keys())
+    T_vals = [float(t) for t in results_dict.keys()]
     chi_vals = list(results_dict.values())
+    
+    chi_critic = np.argmax(chi_vals)
+    T_critic = T_vals[chi_critic]
     
     plt.figure(figsize=(8, 5))
     plt.plot(T_vals, chi_vals, marker='o', linestyle='-', color='purple')
     
     # Ligne verticale pour la théorie d'Onsager
     Tc_theorique = 2.269
-    plt.axvline(Tc_theorique, color='black', linestyle='--', label=f'$T_c$ théorique (~{Tc_theorique})')
+    plt.axvline(Tc_theorique, color='blue', linestyle='--', label=f'$T_c$ théorique (~{Tc_theorique})')
+    plt.axvline(T_critic, color='red', linestyle='--', label=f'$T_c$ empirique (~{T_critic})')
     
     plt.title("Transition de Phase : Susceptibilité Magnétique")
+    plt.xticks([round(t, 3) for t in T_vals])
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
     plt.xlabel("Température ($T$)")
     plt.ylabel("Susceptibilité ($\chi$)")
     plt.legend()
     plt.grid(alpha=0.4)
     plt.show()
+    
+    return T_critic
