@@ -4,26 +4,51 @@ import pandas as pd
 import os
 
 class MarketSimulator:
-    def __init__(self, N, T, J, h, Delta_t, P_0, lambd):
+    def __init__(self, N, T, J, h, Delta_t, P_0, lambd_0, alpha=3, p=3):
         self.N = N
         self.T = T
         self.J = J
         self.h = h
         self.Delta_t = Delta_t
-        self.P_0 = P_0 #initial price
-        self.lambd = lambd #liquidity
+        self.P_0 = P_0 
+        self.lambd_0 = lambd_0 
+        self.alpha = alpha
+        self.p = p
+        # Initialisation du réseau
         self.lattice = IsingLattice(N, T, J, h, Delta_t)
         
-    
     def get_price_history(self):
-        m_history = self.lattice.run()
-        m_history = np.insert(m_history, 0, 0)
-        r_history = m_history / self.lambd
-        sum_ = np.cumsum(r_history)
-        P_history = self.P_0 * np.exp(sum_)
-        return m_history, r_history, P_history
+        # 1. Récupération de la magnétisation totale (Somme des spins)
+        M_total = self.lattice.run()
+        M_total = np.insert(M_total, 0, 0)
+        
+        # 2. NORMALISATION : On passe à la magnétisation moyenne m dans [-1, 1]
+        # C'est l'étape CRUCIALE pour éviter l'overflow
+        m_avg = M_total / self.N
+        
+        # 3. Calcul de la liquidité dynamique
+        # On ajoute 1e-10 pour éviter une division par zéro si la liquidité s'effondre trop
+        lambd_history = self.lambd_0 * np.exp(-self.alpha * np.abs(m_avg)**self.p)
+        lambd_history = np.clip(lambd_history, 1e-10, None) 
+        
+        # 4. Calcul des rendements r_t
+        r_history = m_avg / lambd_history
+        
+        # 5. Calcul du prix via les Log-Prix pour éviter l'overflow
+        # ln(P_t) = ln(P_0) + sum(rendements)
+        log_P_0 = np.log(self.P_0)
+        log_P_history = log_P_0 + np.cumsum(r_history)
+        
+        # On ne repasse en exponentielle que pour l'export, 
+        # en limitant les valeurs pour éviter le crash "inf"
+        P_history = np.exp(np.clip(log_P_history, -700, 700)) 
+        
+        return m_avg, r_history, P_history
     
     def export(self, m_history, r_history, P_history):
+        # Création du dossier data s'il n'existe pas
+        os.makedirs("data", exist_ok=True)
+        
         time = range(len(m_history))
         storage = {
             'time': time,
@@ -33,7 +58,9 @@ class MarketSimulator:
         }
         df = pd.DataFrame(storage)
         
-        name = f"data/N{self.N}_T{self.T:.2f}_J{self.J}_h{self.h}_t{self.Delta_t}_P0{self.P_0}_l{self.lambd}.parquet"
+        # AJOUT de alpha et p dans le nom pour ne pas écraser tes tests !
+        name = (f"data/N{self.N}_T{self.T:.2f}_J{self.J}_h{self.h}_"
+                f"t{self.Delta_t}_l{self.lambd_0}_a{self.alpha}_p{self.p}.parquet")
         
         df.to_parquet(name)
         return name

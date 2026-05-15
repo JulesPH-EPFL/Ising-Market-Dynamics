@@ -29,7 +29,7 @@ def get_delta_h_numba(lattice, L, J, h, i, j):
                 
 @njit
 def run_simulation_numba(lattice, L, N, J, h, beta, Delta_t, t_therma):
-    m_history = np.empty(Delta_t - t_therma)
+    M_history = np.empty(Delta_t - t_therma)
     
     for t in range(Delta_t):
         for _ in range(N):
@@ -41,9 +41,9 @@ def run_simulation_numba(lattice, L, N, J, h, beta, Delta_t, t_therma):
                 lattice[i, j] *= -1
         
         if t >= t_therma:
-            m_history[t - t_therma] = np.sum(lattice) / N
+            M_history[t - t_therma] = np.sum(lattice)
         
-    return m_history, lattice
+    return M_history, lattice
 
 
 class IsingLattice:
@@ -65,8 +65,8 @@ class IsingLattice:
     
     def run(self):
         beta = 1.0 / self.T
-        m_history, final_lattice = run_simulation_numba(
+        M_history, final_lattice = run_simulation_numba(
             self.lattice, self.L, self.N, self.J, self.h, beta, self.Delta_t, self.t_therma
         )
         self.lattice = final_lattice
-        return m_history
+        return M_history
