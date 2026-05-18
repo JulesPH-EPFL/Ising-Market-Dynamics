@@ -19,32 +19,33 @@ class MarketSimulator:
         self.lattice = IsingLattice(N, T, J, Delta_t, h_0, rho, sigma_h)
         
     def get_price_history(self):
-        # 1. Récupération de la magnétisation totale (Somme des spins)
         M_total = self.lattice.run()
         M_total = np.insert(M_total, 0, 0)
-        
-        # 2. NORMALISATION : On passe à la magnétisation moyenne m dans [-1, 1]
-        # C'est l'étape CRUCIALE pour éviter l'overflow
         m_avg = M_total / self.N
-        
-        # 3. Calcul de la liquidité dynamique
-        # On ajoute 1e-10 pour éviter une division par zéro si la liquidité s'effondre trop
-        lambd_history = self.lambd_0 * np.exp(- self.alpha_neg * np.maximum(0,-m_avg) ** self.p 
-                                              - self.alpha_pos * np.maximum(0,m_avg) ** self.p)
-        lambd_history = np.clip(lambd_history, 1e-10, None) 
-        
-        # 4. Calcul des rendements r_t
-        r_history = m_avg / lambd_history
-        
-        # 5. Calcul du prix via les Log-Prix pour éviter l'overflow
-        # ln(P_t) = ln(P_0) + sum(rendements)
-        log_P_0 = np.log(self.P_0)
-        log_P_history = log_P_0 + np.cumsum(r_history)
-        
-        # On ne repasse en exponentielle que pour l'export, 
-        # en limitant les valeurs pour éviter le crash "inf"
-        P_history = np.exp(np.clip(log_P_history, -700, 700)) 
-        
+
+        # Lambda sur |m| — formulation originale, elle était correcte
+        lambd_history = (
+            self.lambd_0 
+            * np.exp(-self.alpha_neg * np.maximum(-m_avg, 0)**self.p 
+                    - self.alpha_pos * np.maximum(m_avg, 0)**self.p)
+        )
+        lambd_history = np.clip(lambd_history, 1e-6, None)
+
+        # Rendements bruts
+        r_raw = m_avg / lambd_history
+
+        # Centrage par fenêtre glissante — pas de look-ahead
+        window = 200
+        r_mean_rolling = pd.Series(r_raw).rolling(window, min_periods=1).mean().values
+        r_history = r_raw - r_mean_rolling
+
+        # Winsorisation à 5 sigma — coupe les outliers numériques absurdes
+        sigma_r = np.std(r_history)
+        r_history = np.clip(r_history, -5 * sigma_r, 5 * sigma_r)
+
+        log_P = np.log(self.P_0) + np.cumsum(r_history)
+        P_history = np.exp(np.clip(log_P, -300, 300))
+
         return m_avg, r_history, P_history
     
     def export(self, m_history, r_history, P_history):
