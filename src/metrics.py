@@ -28,7 +28,7 @@ class MarketMetrics:
     # 1. METRICS OF STATISTICAL PHYSICS
     # ==========================================
 
-    def calculate_susceptibility(self, N, T, burn_in=1000):
+    def calculate_susceptibility(self, N, T):
         """
         Calcule la susceptibilité magnétique (chi) pour vérifier la transition de phase.
         Formula : chi = (N / T) * ( <m^2> - <m>^2 )
@@ -38,11 +38,8 @@ class MarketMetrics:
         :param burn_in: Nombre de pas initiaux à ignorer (pour atteindre l'équilibre)
         :return: Valeur de la susceptibilité
         """
-        if len(self.df) <= burn_in:
-            print("Attention: La simulation est trop courte par rapport au burn-in.")
-            burn_in = 0
             
-        m_eq = self.df['m_history'].iloc[burn_in:] 
+        m_eq = self.df['m_history']
         
         mean_m_sq = np.mean(m_eq**2)
         sq_mean_m = (np.mean(m_eq))**2
@@ -54,11 +51,11 @@ class MarketMetrics:
     # 2. MÉTRIQUES FINANCIÈRES (Faits Stylisés)
     # ==========================================
 
-    def analyze_returns(self, burn_in=1000):
+    def analyze_returns(self):
         """
         Calcule les statistiques descriptives des rendements (Kurtosis, Skewness, test JB).
         """
-        r_eq = self.df['r_history'].iloc[burn_in:]
+        r_eq = self.df['r_history']
         
         # Statistiques de base
         volatility = r_eq.std()
@@ -83,13 +80,13 @@ class MarketMetrics:
     # 3. VISUALISATIONS
     # ==========================================
 
-    def plot_stylized_facts(self, burn_in=1000, lags=50):
+    def plot_stylized_facts(self, lags=50):
         """
         Génère un tableau de bord graphique prouvant le réalisme du marché.
         - Distribution des rendements (Queues épaisses)
         - Autocorrélation des rendements absolus (Volatility Clustering)
         """
-        r_eq = self.df['r_history'].iloc[burn_in:]
+        r_eq = self.df['r_history']
         
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
         
